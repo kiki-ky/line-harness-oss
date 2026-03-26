@@ -7,7 +7,7 @@
 <meta name="description" content="LINE公式アカウント運用の全機能を完全無料で。ステップ配信・セグメント・リッチメニュー・決済・自動化をオープンソースで提供。">
 
 <!-- OGP / Open Graph -->
-<meta property="og:title" content="LINE Harness — L社やU社の上位互換を、なぜ無料で公開するのか">
+<meta property="og:title" content="LINE Harness — L社やU社の上位互換を、なぜ0円で公開するのか">
 <meta property="og:description" content="LINE公式アカウントの運用に必要な全機能を、オープンソースで完全無料提供。何十万円もかける時代は、終わりました。">
 <meta property="og:image" content="https://shudesu.github.io/line-harness-oss/ogp.png">
 <meta property="og:url" content="https://shudesu.github.io/line-harness-oss/">
@@ -17,7 +17,7 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="LINE Harness — L社やU社の上位互換を、なぜ無料で公開するのか">
+<meta name="twitter:title" content="LINE Harness — L社やU社の上位互換を、なぜ0円で公開するのか">
 <meta name="twitter:description" content="LINE公式アカウントの運用に必要な全機能を、オープンソースで完全無料提供。何十万円もかける時代は、終わりました。">
 <meta name="twitter:image" content="https://shudesu.github.io/line-harness-oss/ogp.png">
 <meta name="twitter:creator" content="@ai_shunoda">
@@ -93,7 +93,7 @@
     align-items: center;
     justify-content: center;
     gap: 16px;
-    transform: translateY(100%);
+    transform: translateY(0);
     transition: transform 0.4s ease;
   }
   .float-cta.show { transform: translateY(0); }
@@ -226,6 +226,7 @@
     font-weight: 900;
     line-height: 1.3;
     letter-spacing: -0.03em;
+    margin-top: 16px;
   }
 
   /* 0円 BIG */
@@ -630,7 +631,7 @@
   /* ===== FOOTER ===== */
   footer {
     text-align: center;
-    padding: 32px 24px calc(100px + env(safe-area-inset-bottom, 0px));
+    padding: 32px 24px 80px;
     font-size: 11px;
     color: var(--text-dim);
     border-top: 1px solid var(--dark-border);
@@ -640,26 +641,18 @@
 
   /* ===== RESPONSIVE ===== */
   @media (max-width: 640px) {
-    .section { padding: 60px 0; }
+    .section { padding: 40px 0; }
     .hero { min-height: auto; padding: 60px 20px 80px; }
     .profile-card { flex-direction: column; align-items: center; text-align: center; }
     .profile-bio { text-align: left; }
-    .cta-btn { font-size: 16px; padding: 16px 32px; width: 100%; max-width: 340px; }
+    .cta-btn { font-size: 14px; padding: 14px 24px; width: 100%; max-width: 340px; white-space: nowrap; }
     .features-grid { grid-template-columns: 1fr; }
     .comp-table { font-size: 12px; }
     .comp-table th, .comp-table td { padding: 8px 6px; }
     .benefit-item { flex-direction: column; gap: 10px; }
     .feature-map { padding: 20px; }
-    /* In-app browser (X/LINE) bottom bar avoidance — mobile only */
-    .float-cta {
-      bottom: 56px;
-      left: 12px;
-      right: 12px;
-      border-top: none;
-      border: 1px solid rgba(6, 199, 85, 0.2);
-      border-radius: 16px;
-      background: rgba(5, 10, 8, 0.95);
-    }
+    .final-cta { padding: 60px 16px 80px; }
+    .ps-section { margin-top: 32px; }
   }
 
 
@@ -749,9 +742,9 @@
 
 <!-- ===== FLOATING CTA (吸着) ===== -->
 <div class="float-cta" id="floatCta">
-  <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=lp" class="cta-btn">
+  <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=github" class="cta-btn">
     <svg viewBox="0 0 24 24" fill="currentColor" class="line-icon"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-    LINEで無料体験
+    全機能を使う（0円）
   </a>
 </div>
 
@@ -762,7 +755,9 @@
   <div class="glow-orb" style="width:300px;height:300px;bottom:10%;right:20%;background:var(--cyan);opacity:0.08;"></div>
 
   <div class="container" style="position:relative;z-index:1;">
+    <div style="font-size:clamp(13px,2.5vw,16px);letter-spacing:0.12em;color:var(--text);margin-bottom:8px;">あらゆるSaaSの上位互換を0円で出す<br>The Harnessプロジェクト第一弾</div>
     <div class="product-name" style="font-size:clamp(28px,6vw,44px);">LINE Harness</div>
+    <div style="font-size:clamp(11px,2vw,13px);letter-spacing:0.3em;color:var(--text-muted);margin-top:-14px;">ライン ハーネス</div>
 
     <h1 class="hero-headline">
       L社やU社の上位互換を、<br>なぜ無料で公開するのか。
@@ -778,27 +773,50 @@
       何十万円もかける時代は、終わりました。
     </p>
 
-    <div class="hero-profile">
-      <img src="profile.jpg" alt="野田 修一" class="hero-profile-img">
-      <div class="hero-profile-name">野田 修一</div>
-      <div class="hero-profile-title">LINE Harness 開発者 / AI Engineer</div>
-    </div>
+    <div style="margin-top:48px;"></div>
+
     <div class="speech-bubble">
-      高額なツール代が、挑戦の障壁になるべきではない。<br><br>
-      AIの時代になり、すべての常識が変わろうとしています。<br>
-      AIを活用して働く時間を減らし、自由な時間とお金を増やす。<br>
-      一人ひとりが本当にやりたいことに生きられる世界を、<br>
-      私はつくりたい。<br><br>
-      <strong style="color:var(--text)">その第一歩が、LINE Harnessです。</strong><br>
-      <span style="font-size:12px;opacity:0.7;">そしてこれは、始まりに過ぎません。<br>LINEだけでなく、あらゆるチャネルを一つに繋ぐ——<br>そんな未来を、オープンソースで実現していきます。</span>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <img src="profile.jpg" alt="野田 修一" class="hero-profile-img" style="margin:0;">
+        <div>
+          <div class="hero-profile-name" style="text-align:left;">野田 修一</div>
+          <div class="hero-profile-title" style="text-align:left;">LINE Harness 開発者 / AI Engineer</div>
+          <a href="https://x.com/ai_shunoda" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--text-muted);text-decoration:none;">𝕏 @ai_shunoda</a>
+        </div>
+      </div>
+      <div style="font-size:clamp(24px,5vw,36px);font-weight:900;line-height:1.3;margin-bottom:20px;text-align:left;color:#fff;">LINE Harnessは、<br>始まりに過ぎません。</div>
+      <p style="font-size:14px;color:var(--text-muted);line-height:1.9;margin-bottom:20px;">The Harnessプロジェクトは、<strong style="color:var(--text)">あらゆるSaaSの上位互換を0円で公開する</strong>連続ローンチです。<br>LINE Harnessは、その第一弾。</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+        <div style="background:var(--dark);border:1px solid var(--green);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;">
+          <div style="font-size:20px;font-weight:900;color:var(--green);line-height:1;">LINE</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--green);margin-top:6px;font-weight:700;">公開中</div>
+        </div>
+        <div style="background:var(--dark);border:1px solid var(--dark-border);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;opacity:0.6;">
+          <div style="font-size:20px;font-weight:900;color:var(--text);filter:blur(4px);user-select:none;line-height:1;">???</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--cyan);margin-top:6px;font-weight:700;">第二弾</div>
+        </div>
+        <div style="background:var(--dark);border:1px solid var(--dark-border);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;opacity:0.4;">
+          <div style="font-size:20px;font-weight:900;color:var(--text);filter:blur(4px);user-select:none;line-height:1;">???</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:6px;">第三弾</div>
+        </div>
+        <div style="background:var(--dark);border:1px solid var(--dark-border);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;opacity:0.3;">
+          <div style="font-size:20px;font-weight:900;color:var(--text);filter:blur(4px);user-select:none;line-height:1;">???</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:6px;">第四弾</div>
+        </div>
+      </div>
+      <strong style="color:var(--text)">まずはLINE Harnessを、0円で使ってください。</strong>
     </div>
 
     <div class="mt-40 text-center">
-      <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=lp" class="cta-btn">
+      <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=github" class="cta-btn">
         <svg viewBox="0 0 24 24" fill="currentColor" class="line-icon"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-        LINEで無料体験する
+        全機能を使う（0円）
       </a>
-      <span class="cta-sub">30秒で完了 · LINE登録するだけで機能を体験できます</span>
+      <span class="cta-sub">オープンソース・すべて無料</span>
     </div>
   </div>
 </section>
@@ -822,7 +840,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr class="row-highlight"><td>月額</td><td class="col-other">2万円〜</td><td class="col-other">1万円〜</td><td class="col-h big">0円</td></tr>
+        <tr class="row-highlight"><td>月額</td><td class="col-other">実質2万円〜</td><td class="col-other">実質1万円〜</td><td class="col-h big">0円</td></tr>
         <tr><td>ステップ配信</td><td class="check">✅</td><td class="check">✅</td><td class="col-h">✅</td></tr>
         <tr><td>セグメント配信</td><td class="check">✅</td><td class="check">✅</td><td class="col-h">✅</td></tr>
         <tr><td>リッチメニュー切替</td><td class="check">✅</td><td class="check">✅</td><td class="col-h">✅</td></tr>
@@ -848,28 +866,51 @@
       <h2 class="sec-title">LINE運用、こんな悩みを<br>抱えていませんか？</h2>
     </div>
     <ul class="problem-list">
-      <li><span class="problem-icon">💸</span><span>LINE配信ツールに<strong>毎月数万円〜数十万円</strong>を払い続けている</span></li>
+      <li><span class="problem-icon">💸</span><span>L社やU社などに<strong>毎月数万円〜数十万円</strong>も払い続けている</span></li>
       <li><span class="problem-icon">🏗️</span><span>LINE構築を外注すると<strong>数十万〜数百万円</strong>。修正のたびに追加費用が発生する</span></li>
-      <li><span class="problem-icon">🔒</span><span>ツールに<strong>縛られて</strong>、自分のデータなのに自由に使えない</span></li>
-      <li><span class="problem-icon">🤖</span><span>AIで配信を自動化したいのに、既存ツールでは<strong>連携する方法がない</strong></span></li>
-      <li><span class="problem-icon">📉</span><span>ツールの値上げが止まらず、<strong>利益率がどんどん圧迫</strong>されている</span></li>
+      <li><span class="problem-icon">🔒</span><span>プラットフォームに<strong>ロックイン</strong>され、データもコードも自分のものにならない</span></li>
+      <li><span class="problem-icon">🤖</span><span>AIやClaude Codeと連携したいが、既存ツールでは<strong>APIが非公開で自動化できない</strong></span></li>
     </ul>
-    <p class="text-center mt-32" style="font-size:14px;color:var(--text-muted);">一つでも当てはまるなら、<strong style="color:var(--text)">この先を読む価値があります。</strong></p>
   </div>
 </section>
 
 
-<!-- ===== SECTION 3: 恐怖 ===== -->
+<!-- ===== SECTION 3: 時代の変化 ===== -->
 <section class="section fear-section">
   <div class="container fade-up">
     <div class="text-center">
-      <span class="sec-label" style="border-color:rgba(239,68,68,0.2);color:#ef4444;background:rgba(239,68,68,0.05);">Warning</span>
-      <h2 class="sec-title">このまま何もしなければ、<br>どうなるか。</h2>
+      <span class="sec-label">Shift</span>
+      <h2 class="sec-title">AIがすべての常識を変えた。</h2>
     </div>
-    <div class="fear-card"><h4>1年後</h4><p>あなたが月額費用を払い続ける間に、競合はコスト0円で同等以上の環境を手に入れています。年間数十万〜百万円以上の差は、そのまま利益の差です。</p></div>
-    <div class="fear-card"><h4>2年後</h4><p>AI自動運用が当たり前の時代。API非公開のクローズドなツールに縛られたまま、手動で配信設定を続けることに。周囲がAIで100アカウントを回す中、あなたは1アカウントに何時間も費やし続けます。</p></div>
-    <div class="fear-card"><h4>3年後</h4><p>LINE構築代行・運用代行という仕事自体が消滅している可能性があります。その変化の波に乗るか、飲まれるかは——今この瞬間の選択次第です。</p></div>
-    <p class="text-center mt-48" style="font-size:20px;font-weight:700;"><span style="color:var(--text-dim);">——でも、</span><span class="text-green">まだ間に合います。</span></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px;">
+      <div style="background:var(--dark-card);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:24px;">
+        <h4 style="color:#ef4444;font-size:16px;margin-bottom:12px;">これまで</h4>
+        <p style="font-size:14px;color:var(--text-muted);line-height:1.9;">LINE運用ツールは月額数万円が「当たり前」。大規模運用になると毎月何十万円も発生するケースも多く、APIは非公開、データは他社サーバー。それでも他に選択肢がなかった。</p>
+      </div>
+      <div style="background:var(--dark-card);border:1px solid rgba(6,199,85,0.3);border-radius:12px;padding:24px;">
+        <h4 style="color:var(--green);font-size:16px;margin-bottom:12px;">これから</h4>
+        <p style="font-size:14px;color:var(--text-muted);line-height:1.9;">AIとオープンソースの進化により、同等以上の機能を0円で利用可能に。Claude Codeから全機能を操作し、データもコードもすべて自分のもの。月額課金に縛られない世界へ。</p>
+      </div>
+    </div>
+    <p class="text-center mt-48" style="font-size:20px;font-weight:700;"><span class="text-green">その最前線が、LINE Harnessです。</span></p>
+  </div>
+</section>
+
+
+<!-- ===== だから0円で公開します ===== -->
+<section class="section" style="padding:60px 0;">
+  <div class="container fade-up">
+    <div class="text-center">
+      <span class="sec-label">Why Free</span>
+      <h2 class="sec-title">だから、0円で公開します。</h2>
+    </div>
+    <p class="text-center mt-32" style="font-size:14px;color:var(--text-muted);max-width:580px;margin-left:auto;margin-right:auto;line-height:2;">
+      これまで、SaaSには既得権益的にお金を払い続けるしかありませんでした。<br>
+      AIの進化により、あらゆるSaaSは民主化される時代が来ています。<br><br>
+      その流動性を高め、誰もが自由にツールを使える世界をつくる。<br>
+      LINE Harnessの利用料は<strong style="color:var(--green);">永久に0円</strong>。<br>
+      オープンソースだから、コードもデータもすべてあなたのものです。
+    </p>
   </div>
 </section>
 
@@ -880,10 +921,10 @@
     <div class="text-center">
       <span class="sec-label">Solution</span>
       <div class="product-name mt-16">LINE Harness</div>
-      <p style="font-size:15px;color:var(--text-muted);margin-top:8px;">有料ツールと同じ機能を、完全無料・オープンソースで。</p>
+      <p style="font-size:15px;color:var(--text-muted);margin-top:8px;">L社やU社の上位互換を、完全無料・オープンソースで。</p>
     </div>
     <p class="text-center mt-32" style="font-size:14px;color:var(--text-muted);max-width:580px;margin-left:auto;margin-right:auto;line-height:1.9;">
-      LINE Harnessは、LINE公式アカウント運用の<strong style="color:var(--text)">すべての機能</strong>を備えた無料のCRMプラットフォーム。友だち5,000人までサーバー代も0円。ソースコードが公開されているので、誰でも自由に使え、あなたのビジネスに合わせてカスタマイズも可能です。
+      LINE Harnessは、LINE公式アカウント運用の<strong style="color:var(--text)">すべての機能</strong>を備えたCRMプラットフォーム。Cloudflare Workersで動作し、5,000人までサーバー代0円。MITライセンスで商用利用も完全自由です。
     </p>
 
     <!-- 主要機能カード -->
@@ -974,51 +1015,34 @@
 </section>
 
 
-<!-- ===== SECTION 6: ベネフィット ===== -->
-<section class="section" id="benefits">
+<!-- ===== AI DEMO: Claude Code実話 ===== -->
+<section class="section" style="padding:60px 0;">
   <div class="container fade-up">
     <div class="text-center">
-      <span class="sec-label">Benefits</span>
-      <h2 class="sec-title">あなたの現実は、こう変わる。</h2>
+      <span class="sec-label">AI × LINE Harness</span>
+      <h2 class="sec-title">AIと繋がることで、<br>可能性は無限になる。</h2>
     </div>
-    <div class="mt-24">
-      <div class="benefit-item"><div class="benefit-num">1</div><div class="benefit-text"><h4>月額費用がゼロになる</h4><p>5,000人まで完全無料。1万人でも月$10。有料ツールに払っていた月額費用が、まるごと利益に。</p></div></div>
-      <div class="benefit-item"><div class="benefit-num">2</div><div class="benefit-text"><h4>構築費が不要になる</h4><p>数十万〜数百万の外注費が消える。Claude Codeと対話するだけで配信設定が完了。</p></div></div>
-      <div class="benefit-item"><div class="benefit-num">3</div><div class="benefit-text"><h4>AIで100アカウントを1人で回せる</h4><p>REST API全公開だから、AIエージェントが設定・配信・分析をすべて自動実行。収益構造が根本から変わる。</p></div></div>
-      <div class="benefit-item"><div class="benefit-num">4</div><div class="benefit-text"><h4>ベンダーロックインから解放</h4><p>MITライセンス。データもコードもすべて自分のもの。サービス終了の不安はゼロ。</p></div></div>
-      <div class="benefit-item"><div class="benefit-num">5</div><div class="benefit-text"><h4>有料ツール以上の機能</h4><p>42テーブルのエンタープライズ級。決済・予約・アフィリエイト・BAN検知まで標準搭載。</p></div></div>
+    <div style="max-width:600px;margin:32px auto 0;background:var(--dark-card);border:1px solid var(--dark-border);border-radius:12px;padding:28px 24px;line-height:2;">
+      <p style="font-size:14px;color:var(--text-muted);">オープンソースだから、ユーザーが本当に求めている機能がこれからどんどん追加されていきます。しかも、<strong style="color:var(--text);">それを0円で、永遠にアップデートし続け、使い続けることができるのです。</strong></p>
+      <p style="font-size:14px;color:var(--text-muted);margin-top:16px;">たとえば、ユーザーからの問い合わせに対して、AIが内容を分析し、<strong style="color:var(--text);">パーソナライズされたFlex Messageを自動生成・自動返信。</strong></p>
+      <p style="font-size:14px;color:var(--text-muted);margin-top:16px;">予約確定、発送通知、レッスンレポート、セミナー案内——あらゆるメッセージが、何もしなくても全自動で届きます。</p>
+      <p style="font-size:14px;color:var(--text-muted);margin-top:16px;">これはLINE Harnessが上位互換たるゆえんの、<strong style="color:var(--text);">あくまで一例に過ぎません。</strong></p>
+    </div>
+
+    <div style="margin-top:48px;">
+      <p class="text-center" style="font-size:13px;color:var(--text-dim);letter-spacing:0.05em;margin-bottom:20px;">AIが自動生成したFlex Messageの一例</p>
+      <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;align-items:flex-start;">
+        <img src="flex-6-crop.jpg" alt="AI自動返信" style="width:260px;height:auto;flex-shrink:0;border-radius:12px;scroll-snap-align:start;">
+        <img src="flex-4-crop.jpg" alt="セミナー詳細" style="width:260px;height:auto;flex-shrink:0;border-radius:12px;scroll-snap-align:start;">
+        <img src="flex-2-crop.jpg" alt="予約確定" style="width:260px;height:auto;flex-shrink:0;border-radius:12px;scroll-snap-align:start;">
+        <img src="flex-1-crop.jpg" alt="発送通知" style="width:260px;height:auto;flex-shrink:0;border-radius:12px;scroll-snap-align:start;">
+        <img src="flex-3-crop.jpg" alt="レッスンレポート" style="width:260px;height:auto;flex-shrink:0;border-radius:12px;scroll-snap-align:start;">
+      </div>
     </div>
   </div>
 </section>
 
 
-<!-- ===== 2つの始め方 ===== -->
-<section class="section" id="start" style="background:linear-gradient(180deg, var(--dark), var(--dark-card));">
-  <div class="container fade-up">
-    <div class="text-center">
-      <span class="sec-label">Get Started</span>
-      <h2 class="sec-title">あなたに合った始め方を選べます</h2>
-      <p class="sec-subtitle">技術レベルに関係なく、誰でもLINE Harnessを活用できます。</p>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:40px;">
-      <div style="background:var(--dark-card);border:1px solid var(--dark-border);border-radius:16px;padding:32px 24px;text-align:center;">
-        <div style="font-size:36px;margin-bottom:12px;">🛠️</div>
-        <h4 style="font-size:16px;font-weight:800;margin-bottom:8px;">自分でセットアップする</h4>
-        <p style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:20px;">GitHubからクローンして、自分のCloudflareアカウントにデプロイ。Claude Codeを使えば対話形式でセットアップも可能です。</p>
-        <a href="https://github.com/Shudesu/line-harness-oss" target="_blank" style="display:inline-block;padding:12px 28px;border:2px solid var(--green);border-radius:12px;color:var(--green);font-weight:700;font-size:14px;text-decoration:none;transition:all 0.2s;">GitHubで始める →</a>
-      </div>
-      <div style="background:var(--dark-card);border:2px solid var(--green);border-radius:16px;padding:32px 24px;text-align:center;box-shadow:0 0 30px rgba(6,199,85,0.1);">
-        <div style="font-size:36px;margin-bottom:12px;">🤝</div>
-        <h4 style="font-size:16px;font-weight:800;margin-bottom:8px;">まずは体験してみる</h4>
-        <p style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:20px;">LINE登録するだけで、ステップ配信やリッチメニュー切替を実際に体験できます。技術知識は一切不要です。</p>
-        <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=lp" class="cta-btn" style="font-size:14px;padding:12px 28px;">
-          <svg viewBox="0 0 24 24" fill="currentColor" class="line-icon"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-          LINEで無料体験
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
 
 
 <!-- ===== SECTION 8: SNS社会的証明 ===== -->
@@ -1043,34 +1067,16 @@
   <div class="container">
     <p style="font-size:18px;font-weight:700;">これだけの機能が、<span class="text-green">すべて無料。</span></p>
     <div class="mt-24">
-      <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=lp" class="cta-btn">
+      <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=github" class="cta-btn">
         <svg viewBox="0 0 24 24" fill="currentColor" class="line-icon"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-        LINEで無料体験する
+        全機能を使う（0円）
       </a>
-      <span class="cta-sub">30秒で完了</span>
+      <span class="cta-sub">オープンソース・すべて無料</span>
     </div>
   </div>
 </section>
 
 
-<!-- ===== PROFILE ===== -->
-<section class="section" id="profile">
-  <div class="container fade-up">
-    <div class="text-center">
-      <span class="sec-label">Creator</span>
-      <h2 class="sec-title">開発者について</h2>
-    </div>
-    <div class="profile-card">
-      <img src="profile.jpg" alt="野田 修一" class="profile-img">
-      <div>
-        <div class="profile-name">野田 修一</div>
-        <div class="profile-title">LINE Harness 開発者 / AI Engineer</div>
-        <p class="profile-bio">AIの力で「働く」の常識を変え、一人ひとりが自分の人生を生きられる世界をつくる。高額なツール代が挑戦の障壁になるべきではない——LINE Harnessはその信念から生まれた第一歩です。LINEに留まらず、あらゆるチャネルを一つに繋ぐオープンなマーケティング基盤を、今後もどんどん公開していきます。</p>
-        <a href="https://x.com/ai_shunoda" target="_blank" rel="noopener noreferrer" class="profile-x">𝕏 @ai_shunoda をフォロー →</a>
-      </div>
-    </div>
-  </div>
-</section>
 
 
 <!-- ===== FAQ ===== -->
@@ -1081,13 +1087,55 @@
       <h2 class="sec-title">よくある質問</h2>
     </div>
     <div class="mt-32">
-      <div class="faq-item open"><div class="faq-q">本当に無料ですか？後から課金されませんか？</div><div class="faq-a">完全無料です。MITライセンスのオープンソースで、ソースコード自体が公開されています。Cloudflare無料枠で5,000人まで運用でき、サーバー代も0円。後から課金が発生する仕組みは一切ありません。</div></div>
+      <div class="faq-item"><div class="faq-q">本当に無料ですか？後から課金されませんか？</div><div class="faq-a">LINE Harnessが課金することは一切ありません。永久に0円です。サーバーはCloudflareを利用しており、Cloudflareの無料枠で5,000人まで運用可能です。5,000人を超えた場合はCloudflare側で1万人につき約$10/月が発生しますが、これはCloudflareへの支払いであり、LINE Harnessへの課金ではありません。</div></div>
       <div class="faq-item"><div class="faq-q">エンジニアじゃなくても使えますか？</div><div class="faq-a">管理画面はブラウザで操作できる直感的なUIです。初期セットアップにはCloudflareアカウントの作成など技術的な手順がありますが、GitHubのWikiに詳細ガイドを用意しています。Claude Codeと連携すれば、対話形式で設定を進めることも可能です。</div></div>
       <div class="faq-item"><div class="faq-q">他社ツールから乗り換えられますか？</div><div class="faq-a">はい。ステップ配信・セグメント・リッチメニュー切替など主要機能をすべてカバーし、さらに決済連携・予約・AI連携・BAN検知など、既存ツールにはない機能も搭載しています。</div></div>
       <div class="faq-item"><div class="faq-q">セキュリティは大丈夫ですか？</div><div class="faq-a">データはあなた自身のCloudflare D1データベースに保存されます。第三者サーバーを経由しないため、むしろ既存SaaSよりもデータ管理権限は強固です。オープンソースなのでコードの透明性も保証されています。</div></div>
-      <div class="faq-item"><div class="faq-q">どれくらいの規模まで対応できますか？</div><div class="faq-a">Cloudflare Workersはグローバルエッジで動作し、スケーラビリティは極めて高いです。5,000人まで無料、10,000人で約$10/月、50,000人以上でも約$25/月。</div></div>
+      <div class="faq-item"><div class="faq-q">どれくらいの規模まで対応できますか？</div><div class="faq-a">Cloudflare Workersはグローバルエッジで動作し、スケーラビリティは極めて高いです。5,000人まで無料、1万人で約$10/月、5万人以上でも約$25/月。これらはすべてCloudflareへの支払いであり、LINE Harnessへの課金ではありません。</div></div>
       <div class="faq-item"><div class="faq-q">サポートはありますか？</div><div class="faq-a">GitHubのIssueやDiscussionでコミュニティサポートを受けられます。LINE登録いただければ、最新アップデートや活用ノウハウも定期的にお届けします。</div></div>
-      <div class="faq-item"><div class="faq-q">なぜ無料で公開するのですか？</div><div class="faq-a">AIですべての常識が変わる今、高額なツール代が挑戦の障壁になるべきではない。一人ひとりが自由に生きられる世界を実現するための活動の第一歩です。</div></div>
+      <div class="faq-item"><div class="faq-q">なぜ無料で公開するのですか？</div><div class="faq-a">これまでSaaSに既得権益的にお金を払い続けるしかない時代がありました。AIの進化により、あらゆるSaaSは民主化され、誰もが同じ機能を0円で手にできる時代が来ています。その流動性を高め、誰もが自由にツールを使える世界を実現するために、LINE Harnessは無料で公開しています。</div></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== THE HARNESS VISION ===== -->
+<section class="section" style="padding:80px 0;">
+  <div class="container fade-up">
+    <div class="speech-bubble" style="max-width:680px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <img src="profile.jpg" alt="野田 修一" class="hero-profile-img" style="margin:0;">
+        <div>
+          <div class="hero-profile-name" style="text-align:left;">野田 修一</div>
+          <div class="hero-profile-title" style="text-align:left;">LINE Harness 開発者 / AI Engineer</div>
+          <a href="https://x.com/ai_shunoda" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--text-muted);text-decoration:none;">𝕏 @ai_shunoda</a>
+        </div>
+      </div>
+      <div style="font-size:clamp(24px,5vw,36px);font-weight:900;line-height:1.3;margin-bottom:20px;color:#fff;">LINE Harnessは、<br>始まりに過ぎません。</div>
+      <p style="font-size:14px;color:var(--text-muted);line-height:1.9;margin-bottom:20px;">The Harnessプロジェクトは、<strong style="color:var(--text)">あらゆるSaaSの上位互換を0円で公開する</strong>連続ローンチです。<br>LINE Harnessは、その第一弾。</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+        <div style="background:var(--dark);border:1px solid var(--green);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;">
+          <div style="font-size:20px;font-weight:900;color:var(--green);line-height:1;">LINE</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--green);margin-top:6px;font-weight:700;">公開中</div>
+        </div>
+        <div style="background:var(--dark);border:1px solid var(--dark-border);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;opacity:0.6;">
+          <div style="font-size:20px;font-weight:900;color:var(--text);filter:blur(4px);user-select:none;line-height:1;">???</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--cyan);margin-top:6px;font-weight:700;">第二弾</div>
+        </div>
+        <div style="background:var(--dark);border:1px solid var(--dark-border);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;opacity:0.4;">
+          <div style="font-size:20px;font-weight:900;color:var(--text);filter:blur(4px);user-select:none;line-height:1;">???</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:6px;">第三弾</div>
+        </div>
+        <div style="background:var(--dark);border:1px solid var(--dark-border);border-radius:10px;padding:16px 20px;text-align:center;min-width:110px;opacity:0.3;">
+          <div style="font-size:20px;font-weight:900;color:var(--text);filter:blur(4px);user-select:none;line-height:1;">???</div>
+          <div style="font-size:15px;color:var(--text-muted);font-weight:700;line-height:1;">Harness</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:6px;">第四弾</div>
+        </div>
+      </div>
+      <strong style="color:var(--text)">次はどの業界を<span class="text-green">0円</span>にしてほしいですか？</strong>
     </div>
   </div>
 </section>
@@ -1096,23 +1144,22 @@
 <!-- ===== FINAL CTA ===== -->
 <section class="final-cta" id="register">
   <div class="container fade-up">
-    <h2 class="final-headline">月額<span class="text-green" style="font-size:1.3em;"> 0円</span>で、<br>LINE運用の<span class="text-green">すべて</span>を手に入れる。</h2>
+    <h2 class="final-headline">L社・U社の上位互換を、<br><span class="text-green" style="font-size:1.3em;">0円</span>で、どうぞ。</h2>
     <p class="mt-24" style="font-size:14px;color:var(--text-muted);max-width:480px;margin-left:auto;margin-right:auto;line-height:1.8;">
-      有料ツールの上位互換。オープンソース。サーバー代0円。<br>あなたが月額費用を払い続ける理由は、もうどこにもありません。
+      オープンソース。全機能API公開。サーバー代0円。<br>データもコードもすべてあなたのものです。
     </p>
-    <div class="mt-40" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
-      <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=lp" class="cta-btn" style="font-size:20px;padding:20px 56px;">
+    <div class="mt-40">
+      <a href="https://line-crm-worker.line-crm-api.workers.dev/auth/line?ref=github" class="cta-btn" style="font-size:20px;padding:20px 56px;">
         <svg viewBox="0 0 24 24" fill="currentColor" class="line-icon"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-        LINEで無料体験する
+        全機能を使う（0円）
       </a>
-      <span class="cta-sub">30秒で完了 · LINE登録するだけで機能を体験できます</span>
-      <a href="https://github.com/Shudesu/line-harness-oss" target="_blank" style="display:inline-block;margin-top:8px;padding:12px 32px;border:1px solid var(--dark-border);border-radius:12px;color:var(--text-muted);font-size:14px;text-decoration:none;transition:all 0.2s;">エンジニアの方はGitHubから直接セットアップ →</a>
+      <span class="cta-sub">オープンソース・すべて無料</span>
     </div>
 
     <div class="ps-section">
-      <p><strong>P.S.</strong><br>LINE Harnessは、「高額なツール代が挑戦の障壁になるべきではない」という信念から生まれました。</p>
-      <p class="mt-16">公開直後から大きな反響をいただいています。Brain代表のさこ社長は「とんでもない」と評し、デジライズCEOのチャエンさんは「LINE運用代行を駆逐する可能性がある」と言い、やまもとりゅうけんさんは「コンテンツビジネスの最善構成」と評しています。</p>
-      <p class="mt-16">3ヶ月後、1年後。あの時すぐに始めておけばよかった——そう思う未来ではなく、<strong>あの時始めてよかった</strong>と思える未来を、今日選んでください。</p>
+      <p><strong>P.S.</strong><br>これまで、SaaSには既得権益的にお金を払い続けるしかない時代がありました。月額数万円、年間数十万円——それが「当たり前」とされてきた。</p>
+      <p class="mt-16">でも、AIの登場ですべてが変わりました。あらゆるSaaSは民主化され、誰もが同じ機能を0円で手にできる時代が来ています。</p>
+      <p class="mt-16">LINE Harnessは、その流動性を高めるために生まれました。<strong>「当たり前」を0にする。</strong>それが、The Harnessプロジェクトの信念です。</p>
       <p class="mt-16" style="text-align:right;">—— 野田 修一</p>
     </div>
   </div>
@@ -1120,8 +1167,8 @@
 
 
 <footer>
-  <p>&copy; 2026 LINE Harness — Open Source CRM for LINE Official Accounts</p>
-  <p style="margin-top:6px;"><a href="https://github.com/Shudesu/line-harness-oss" target="_blank">GitHub</a> &middot; <a href="https://x.com/ai_shunoda" target="_blank">𝕏</a></p>
+  <p>&copy; 2026 The Harness</p>
+  <p style="margin-top:6px;"><a href="https://x.com/ai_shunoda" target="_blank">𝕏</a></p>
 </footer>
 
 
