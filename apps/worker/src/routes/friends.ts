@@ -12,7 +12,7 @@ import {
 } from '@line-crm/db';
 import type { Friend as DbFriend, Tag as DbTag } from '@line-crm/db';
 import { fireEvent } from '../services/event-bus.js';
-import { buildMessage } from '../services/step-delivery.js';
+import { buildMessage, processStepDeliveries } from '../services/step-delivery.js';
 import type { Env } from '../index.js';
 
 const friends = new Hono<Env>();
@@ -203,6 +203,7 @@ friends.post('/api/friends/:id/tags', async (c) => {
     await addTagToFriend(db, friendId, body.tagId);
 
     // Enroll in tag_added scenarios that match this tag
+    let enrolled = false;
     const allScenarios = await getScenarios(db);
     for (const scenario of allScenarios) {
       if (scenario.trigger_type === 'tag_added' && scenario.is_active && scenario.trigger_tag_id === body.tagId) {
@@ -212,7 +213,26 @@ friends.post('/api/friends/:id/tags', async (c) => {
           .first();
         if (!existing) {
           await enrollFriendInScenario(db, friendId, scenario.id);
+          enrolled = true;
         }
+      }
+    }
+
+    // Immediately deliver due steps (don't wait for cron)
+    if (enrolled) {
+      try {
+        const { LineClient } = await import('@line-crm/line-sdk');
+        const friend = await getFriendById(db, friendId);
+        let accessToken = c.env.LINE_CHANNEL_ACCESS_TOKEN;
+        if (friend && (friend as unknown as Record<string, unknown>).line_account_id) {
+          const { getLineAccountById } = await import('@line-crm/db');
+          const account = await getLineAccountById(db, (friend as unknown as Record<string, unknown>).line_account_id as string);
+          if (account) accessToken = account.channel_access_token;
+        }
+        const lineClient = new LineClient(accessToken);
+        await processStepDeliveries(db, lineClient, c.env.WORKER_URL || new URL(c.req.url).origin);
+      } catch (err) {
+        console.error('Immediate step delivery after tag_added failed:', err);
       }
     }
 

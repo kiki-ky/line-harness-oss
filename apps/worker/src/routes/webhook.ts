@@ -133,8 +133,14 @@ async function handleEvent(
               try {
                 const expandedContent = expandVariables(firstStep.message_content, friend as { id: string; display_name: string | null; user_id: string | null });
                 const message = buildMessage(firstStep.message_type, expandedContent);
-                await lineClient.replyMessage(event.replyToken, [message]);
-                console.log(`Immediate delivery: sent step ${firstStep.id} to ${userId}`);
+                try {
+                  await lineClient.replyMessage(event.replyToken, [message]);
+                  console.log(`Immediate delivery (reply): sent step ${firstStep.id} to ${userId}`);
+                } catch {
+                  // replyToken expired — fallback to push
+                  await lineClient.pushMessage(userId, [message]);
+                  console.log(`Immediate delivery (push fallback): sent step ${firstStep.id} to ${userId}`);
+                }
 
                 // Log outgoing message (replyMessage = 無料)
                 const logId = crypto.randomUUID();
@@ -361,6 +367,81 @@ async function handleEvent(
       eventData: { text: incomingText, matched },
     }, lineAccessToken, lineAccountId);
 
+    return;
+  }
+
+  // Handle postback events (e.g., event registration from Flex Message buttons)
+  if (event.type === 'postback') {
+    const userId = event.source.type === 'user' ? event.source.userId : undefined;
+    if (!userId) return;
+
+    const postbackData = (event as unknown as { postback: { data: string } }).postback?.data;
+    if (!postbackData) return;
+
+    const params = new URLSearchParams(postbackData);
+    const action = params.get('action');
+
+    if (action === 'apply_event') {
+      const venueId = params.get('venue_id');
+      const region = params.get('region');
+      const appliedTagId = params.get('applied_tag');
+
+      if (!venueId) return;
+
+      // Call Platform API to create registration
+      const platformUrl = 'https://admin.withkosen.prossell.jp/api/public/apply-event';
+      try {
+        const res = await fetch(platformUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ line_user_id: userId, venue_id: venueId, region }),
+        });
+        const data = await res.json() as { success?: boolean; already_registered?: boolean; error?: string };
+
+        // Add applied tag in Harness
+        if (appliedTagId && (data.success || data.already_registered)) {
+          const friend = await getFriendByLineUserId(db, userId);
+          if (friend) {
+            const { addTagToFriend } = await import('@line-crm/db');
+            try {
+              await addTagToFriend(db, friend.id, appliedTagId);
+            } catch {
+              // Tag might already exist
+            }
+          }
+        }
+
+        // Reply to user
+        if (event.replyToken) {
+          if (data.already_registered) {
+            await lineClient.replyMessage(event.replyToken, [
+              buildMessage('text', '既に参加申込み済みです！\n当日お会いできるのを楽しみにしています。'),
+            ]);
+          } else if (data.success) {
+            await lineClient.replyMessage(event.replyToken, [
+              buildMessage('text', `参加申込みを受け付けました！🎉\n\n${region ? `${region}地区の` : ''}ISセミナーでお会いしましょう。\n当日の詳細は開催前にお知らせします。`),
+            ]);
+          } else if (data.error === 'student_not_found') {
+            await lineClient.replyMessage(event.replyToken, [
+              buildMessage('text', '先にプロフィール登録をお願いします。\n\nhttps://admin.withkosen.prossell.jp/api/public/line-auth'),
+            ]);
+          } else {
+            await lineClient.replyMessage(event.replyToken, [
+              buildMessage('text', '申込みの処理中にエラーが発生しました。時間をおいて再度お試しください。'),
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to process apply_event postback:', err);
+        if (event.replyToken) {
+          try {
+            await lineClient.replyMessage(event.replyToken, [
+              buildMessage('text', '申込みの処理中にエラーが発生しました。時間をおいて再度お試しください。'),
+            ]);
+          } catch {}
+        }
+      }
+    }
     return;
   }
 }
