@@ -83,7 +83,7 @@ export default function AttributionPage() {
   }
 
   const handleCopy = async (refCode: string) => {
-    const url = `${WORKER_BASE}/auth/line?ref=${encodeURIComponent(refCode)}`
+    const url = `https://withkosen.prossell.jp/line/auth/line?ref=${encodeURIComponent(refCode)}`
     await navigator.clipboard.writeText(url)
     setCopiedCode(refCode)
     setTimeout(() => setCopiedCode(null), 2000)
@@ -147,7 +147,7 @@ export default function AttributionPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {summary.routes.map((route) => {
-                const authUrl = `${WORKER_BASE}/auth/line?ref=${encodeURIComponent(route.refCode)}`
+                const authUrl = `https://withkosen.prossell.jp/line/auth/line?ref=${encodeURIComponent(route.refCode)}`
                 const isExpanded = selectedRef === route.refCode
                 return (
                   <>

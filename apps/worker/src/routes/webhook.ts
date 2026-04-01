@@ -12,6 +12,7 @@ import {
   completeFriendScenario,
   upsertChatOnMessage,
   getLineAccounts,
+  getFriendTags,
   jstNow,
 } from '@line-crm/db';
 import { fireEvent } from '../services/event-bus.js';
@@ -66,7 +67,7 @@ webhook.post('/webhook', async (c) => {
   const processingPromise = (async () => {
     for (const event of body.events) {
       try {
-        await handleEvent(db, lineClient, event, channelAccessToken, matchedAccountId, c.env.WORKER_URL || new URL(c.req.url).origin);
+        await handleEvent(db, lineClient, event, channelAccessToken, matchedAccountId, c.env.WORKER_URL || new URL(c.req.url).origin, c.env.SLACK_BOT_TOKEN, c.env.SLACK_CHANNEL_ID);
       } catch (err) {
         console.error('Error handling webhook event:', err);
       }
@@ -85,6 +86,8 @@ async function handleEvent(
   lineAccessToken: string,
   lineAccountId: string | null = null,
   workerUrl?: string,
+  slackBotToken?: string,
+  slackChannelId?: string,
 ): Promise<void> {
   if (event.type === 'follow') {
     const userId =
@@ -216,7 +219,7 @@ async function handleEvent(
 
     // チャットを作成/更新（ユーザーの自発的メッセージのみ unread にする）
     // ボタンタップ等の自動応答キーワードは除外
-    const autoKeywords = ['料金', '機能', 'API', 'フォーム', 'ヘルプ', 'UUID', 'UUID連携について教えて', 'UUID連携を確認', '配信時間', '導入支援を希望します', 'アカウント連携を見る', '体験を完了する', 'BAN対策を見る', '連携確認'];
+    const autoKeywords = ['料金', '機能', 'API', 'フォーム', 'ヘルプ', 'UUID', 'UUID連携について教えて', 'UUID連携を確認', '配信時間', '導入支援を希望します', 'アカウント連携を見る', '体験を完了する', 'BAN対策を見る', '連携確認', 'イベントに申し込む', 'よくある質問', '高専OBに相談する'];
     const isAutoKeyword = autoKeywords.some(k => incomingText === k);
     const isTimeCommand = /(?:配信時間|配信|届けて|通知)[はを]?\s*\d{1,2}\s*時/.test(incomingText);
     if (!isAutoKeyword && !isTimeCommand) {
@@ -288,7 +291,7 @@ async function handleEvent(
               footer: { type: 'box', layout: 'vertical', paddingAll: '16px',
                 contents: [
                   { type: 'button', action: { type: 'message', label: '導入について相談する', text: '導入支援を希望します' }, style: 'primary', color: '#06C755' },
-                  ...(c.env.LIFF_URL ? [{ type: 'button', action: { type: 'uri', label: 'フィードバックを送る', uri: `${c.env.LIFF_URL}?page=form` }, style: 'secondary', margin: 'sm' }] : []),
+                  ...(workerUrl ? [{ type: 'button' as const, action: { type: 'uri' as const, label: 'フィードバックを送る', uri: `${workerUrl}` }, style: 'secondary' as const, margin: 'sm' as const }] : []),
                 ],
               },
             }))]);
@@ -309,6 +312,230 @@ async function handleEvent(
       } catch (err) {
         console.error('Cross-account trigger error:', err);
       }
+    }
+
+    // ── リッチメニューボタン: テキストメッセージハンドラ ──
+    const REGISTERED_TAG_ID = '510a566c-4a55-4712-87ae-fdad3a17a1c8';
+
+    if (incomingText === 'イベントに申し込む') {
+      try {
+        const friendTags = await getFriendTags(db, friend.id);
+        const isRegistered = friendTags.some(t => t.id === REGISTERED_TAG_ID);
+        const tagNames = friendTags.map(t => t.name);
+
+        if (!isRegistered) {
+          // 未登録
+          await lineClient.replyMessage(event.replyToken, [
+            buildMessage('flex', JSON.stringify({
+              type: 'bubble',
+              body: {
+                type: 'box', layout: 'vertical', paddingAll: '20px',
+                contents: [
+                  { type: 'text', text: 'まずはプロフィールを登録してください', size: 'md', weight: 'bold', color: '#1e293b', wrap: true },
+                  { type: 'text', text: 'イベントへの申し込みにはプロフィール登録が必要です。', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+                ],
+              },
+              footer: {
+                type: 'box', layout: 'vertical', paddingAll: '16px',
+                contents: [
+                  { type: 'button', action: { type: 'uri', label: 'プロフィールを登録する', uri: 'https://withkosen.prossell.jp/api/public/line-auth' }, style: 'primary', color: '#06C755' },
+                ],
+              },
+            })),
+          ]);
+        } else {
+          // 登録済み — 地区とapplied状態を判定
+          const NON_ACTIVE_AREAS = ['area-東北', 'area-北海道', 'area-東海北陸'];
+          const isNonActive = tagNames.some(n => NON_ACTIVE_AREAS.includes(n));
+          const appliedTag = tagNames.find(n => n.startsWith('applied-'));
+
+          if (isNonActive && !appliedTag) {
+            // 非開催地区
+            await lineClient.replyMessage(event.replyToken, [
+              buildMessage('flex', JSON.stringify({
+                type: 'bubble',
+                body: {
+                  type: 'box', layout: 'vertical', paddingAll: '20px',
+                  contents: [
+                    { type: 'text', text: 'お住まいの地区は今シーズンのISセミナー対象外です', size: 'md', weight: 'bold', color: '#1e293b', wrap: true },
+                    { type: 'text', text: '冬の合同企業説明会（12月〜2月）での開催を予定しています。開催が決まり次第LINEでお知らせします！', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+                    { type: 'text', text: 'キャリアの相談はいつでも受付中です👇', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+                  ],
+                },
+                footer: {
+                  type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'sm',
+                  contents: [
+                    { type: 'button', action: { type: 'message', label: '高専OBに相談する', text: '高専OBに相談する' }, style: 'primary', color: '#06C755' },
+                    { type: 'button', action: { type: 'uri', label: 'イベント情報を見る', uri: 'https://withkosen.prossell.jp/event-schedule' }, style: 'link', color: '#059669' },
+                  ],
+                },
+              })),
+            ]);
+          } else if (appliedTag) {
+            // 申込済み
+            const regionName = appliedTag.replace('applied-', '');
+            await lineClient.replyMessage(event.replyToken, [
+              buildMessage('flex', JSON.stringify({
+                type: 'bubble',
+                body: {
+                  type: 'box', layout: 'vertical', paddingAll: '20px',
+                  contents: [
+                    { type: 'text', text: `${regionName}地区のISセミナーに申込み済みです！`, size: 'md', weight: 'bold', color: '#059669', wrap: true },
+                    { type: 'text', text: '当日お会いできるのを楽しみにしています。\n開催の詳細は事前にLINEでお知らせします。', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+                  ],
+                },
+                footer: {
+                  type: 'box', layout: 'vertical', paddingAll: '16px',
+                  contents: [
+                    { type: 'button', action: { type: 'uri', label: 'イベント詳細を見る', uri: 'https://withkosen.prossell.jp/event-schedule' }, style: 'link', color: '#059669' },
+                  ],
+                },
+              })),
+            ]);
+          } else {
+            // 登録済み・未申込・開催地区 → 地区のイベント申込を表示
+            // area タグから地区を特定してシナリオのFlexを再送
+            const areaTag = tagNames.find(n => n.startsWith('area-'));
+            const region = areaTag ? areaTag.replace('area-', '') : null;
+
+            if (region) {
+              // 該当地区のシナリオを検索して最初のステップを送る
+              const scenarios = await getScenarios(db);
+              const areaScenario = scenarios.find(s =>
+                s.trigger_type === 'tag_added' && s.is_active &&
+                s.name.includes(region) && s.name.includes('イベント申込み')
+              );
+              if (areaScenario) {
+                const steps = await getScenarioSteps(db, areaScenario.id);
+                if (steps[0]) {
+                  let expandedContent = expandVariables(steps[0].message_content, friend as { id: string; display_name: string | null; user_id: string | null; metadata?: string | null });
+                  // 交通費を動的に追加
+                  try {
+                    const costRes = await fetch(`https://withkosen.prossell.jp/api/public/transport-cost?line_user_id=${userId}`);
+                    if (costRes.ok) {
+                      const costData = await costRes.json() as { transport_cost?: number | null };
+                      if (costData.transport_cost != null && steps[0].message_type === 'flex') {
+                        const flexJson = JSON.parse(expandedContent);
+                        const costText = costData.transport_cost > 0
+                          ? `💰 交通費補助: 往復${costData.transport_cost.toLocaleString()}円をサポート`
+                          : '💰 交通費補助: 会場が近いため補助対象外';
+                        // bodyのcontentsの最後に交通費情報を追加
+                        if (flexJson.body?.contents) {
+                          flexJson.body.contents.push(
+                            { type: 'separator', margin: 'lg' },
+                            { type: 'text', text: costText, size: 'sm', weight: 'bold', color: '#059669', wrap: true, margin: 'lg' }
+                          );
+                        }
+                        expandedContent = JSON.stringify(flexJson);
+                      }
+                    }
+                  } catch {}
+                  const message = buildMessage(steps[0].message_type, expandedContent);
+                  await lineClient.replyMessage(event.replyToken, [message]);
+                } else {
+                  await lineClient.replyMessage(event.replyToken, [
+                    buildMessage('text', 'イベント一覧はこちらから確認できます👇\nhttps://withkosen.prossell.jp/event-schedule'),
+                  ]);
+                }
+              } else {
+                await lineClient.replyMessage(event.replyToken, [
+                  buildMessage('text', 'イベント一覧はこちらから確認できます👇\nhttps://withkosen.prossell.jp/event-schedule'),
+                ]);
+              }
+            } else {
+              await lineClient.replyMessage(event.replyToken, [
+                buildMessage('text', 'イベント一覧はこちらから確認できます👇\nhttps://withkosen.prossell.jp/event-schedule'),
+              ]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to handle イベントに申し込む:', err);
+      }
+      return;
+    }
+
+    if (incomingText === 'よくある質問') {
+      try {
+        await lineClient.replyMessage(event.replyToken, [
+          buildMessage('flex', JSON.stringify({
+            type: 'bubble',
+            header: {
+              type: 'box', layout: 'vertical', paddingAll: '16px', backgroundColor: '#06C755',
+              contents: [
+                { type: 'text', text: 'よくある質問', size: 'lg', weight: 'bold', color: '#ffffff' },
+              ],
+            },
+            body: {
+              type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'lg',
+              contents: [
+                {
+                  type: 'box', layout: 'vertical', spacing: 'sm',
+                  contents: [
+                    { type: 'text', text: 'Q. イベントの参加費は？', size: 'sm', weight: 'bold', color: '#1e293b', wrap: true },
+                    { type: 'text', text: 'A. 無料です。交通費の補助もあります。', size: 'sm', color: '#64748b', wrap: true },
+                  ],
+                },
+                { type: 'separator' },
+                {
+                  type: 'box', layout: 'vertical', spacing: 'sm',
+                  contents: [
+                    { type: 'text', text: 'Q. 服装は？', size: 'sm', weight: 'bold', color: '#1e293b', wrap: true },
+                    { type: 'text', text: 'A. 私服でOKです。', size: 'sm', color: '#64748b', wrap: true },
+                  ],
+                },
+                { type: 'separator' },
+                {
+                  type: 'box', layout: 'vertical', spacing: 'sm',
+                  contents: [
+                    { type: 'text', text: 'Q. 持ち物は？', size: 'sm', weight: 'bold', color: '#1e293b', wrap: true },
+                    { type: 'text', text: 'A. 特にありません。筆記用具があると便利です。', size: 'sm', color: '#64748b', wrap: true },
+                  ],
+                },
+                { type: 'separator' },
+                {
+                  type: 'box', layout: 'vertical', spacing: 'sm',
+                  contents: [
+                    { type: 'text', text: 'Q. 途中参加・退出は？', size: 'sm', weight: 'bold', color: '#1e293b', wrap: true },
+                    { type: 'text', text: 'A. 可能ですが、全プログラム参加をおすすめします。', size: 'sm', color: '#64748b', wrap: true },
+                  ],
+                },
+              ],
+            },
+          })),
+        ]);
+      } catch (err) {
+        console.error('Failed to handle よくある質問:', err);
+      }
+      return;
+    }
+
+    if (incomingText === '高専OBに相談する') {
+      try {
+        await lineClient.replyMessage(event.replyToken, [
+          buildMessage('flex', JSON.stringify({
+            type: 'bubble',
+            body: {
+              type: 'box', layout: 'vertical', paddingAll: '20px',
+              contents: [
+                { type: 'text', text: '高専OB/OGがキャリアの相談に乗ります！', size: 'md', weight: 'bold', color: '#1e293b', wrap: true },
+                { type: 'text', text: '以下から相談内容を選んでください', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+              ],
+            },
+            footer: {
+              type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'sm',
+              contents: [
+                { type: 'button', action: { type: 'postback', label: '就活について相談したい', data: 'ob_consult_shukatsu', displayText: '就活について相談したい' }, style: 'primary', color: '#06C755' },
+                { type: 'button', action: { type: 'postback', label: 'インターンについて相談したい', data: 'ob_consult_intern', displayText: 'インターンについて相談したい' }, style: 'secondary' },
+                { type: 'button', action: { type: 'postback', label: 'キャリア全般の相談', data: 'ob_consult_career', displayText: 'キャリア全般の相談' }, style: 'secondary' },
+              ],
+            },
+          })),
+        ]);
+      } catch (err) {
+        console.error('Failed to handle 高専OBに相談する:', err);
+      }
+      return;
     }
 
     // 自動返信チェック（このアカウントのルール + グローバルルールのみ）
@@ -361,6 +588,34 @@ async function handleEvent(
       }
     }
 
+    // 自動返信にもリッチメニューにもマッチしなかった場合のキャッチオール応答
+    if (!matched) {
+      try {
+        await lineClient.replyMessage(event.replyToken, [
+          buildMessage('flex', JSON.stringify({
+            type: 'bubble',
+            body: {
+              type: 'box', layout: 'vertical', paddingAll: '20px',
+              contents: [
+                { type: 'text', text: 'お問い合わせありがとうございます！', size: 'md', weight: 'bold', color: '#1e293b', wrap: true },
+                { type: 'text', text: '以下から該当するものを選んでください', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+              ],
+            },
+            footer: {
+              type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'sm',
+              contents: [
+                { type: 'button', action: { type: 'postback', label: '質問する', data: `inquiry_question&msg=${encodeURIComponent(incomingText.slice(0, 100))}`, displayText: '質問する' }, style: 'primary', color: '#06C755' },
+                { type: 'button', action: { type: 'postback', label: '高専OB/OGに相談する', data: `inquiry_ob&msg=${encodeURIComponent(incomingText.slice(0, 100))}`, displayText: '高専OB/OGに相談する' }, style: 'secondary' },
+                { type: 'button', action: { type: 'postback', label: '間違いでした', data: 'inquiry_mistake', displayText: '間違いでした' }, style: 'secondary' },
+              ],
+            },
+          })),
+        ]);
+      } catch (err) {
+        console.error('Failed to send catch-all reply:', err);
+      }
+    }
+
     // イベントバス発火: message_received
     await fireEvent(db, 'message_received', {
       friendId: friend.id,
@@ -377,6 +632,100 @@ async function handleEvent(
 
     const postbackData = (event as unknown as { postback: { data: string } }).postback?.data;
     if (!postbackData) return;
+
+    // OB相談・質問のpostbackハンドラ
+    const pbParams = new URLSearchParams(postbackData);
+    const pbAction = pbParams.get('action') || postbackData.split('&')[0];
+    const userMessage = pbParams.get('msg') ? decodeURIComponent(pbParams.get('msg')!) : '';
+
+    if (pbAction.startsWith('ob_consult_') || pbAction === 'inquiry_question' || postbackData.startsWith('ob_consult_') || postbackData.startsWith('inquiry_question')) {
+      const friend = await getFriendByLineUserId(db, userId);
+      if (!friend) return;
+
+      const labels: Record<string, string> = {
+        ob_consult_shukatsu: '就活について',
+        ob_consult_intern: 'インターンについて',
+        ob_consult_career: 'キャリア全般',
+        inquiry_question: '質問',
+      };
+      const label = labels[pbAction] || labels[postbackData.split('&')[0]] || pbAction;
+
+      // Harnessのチャットを作成
+      try {
+        const chatId = crypto.randomUUID();
+        const now = jstNow();
+        await db.prepare(
+          `INSERT INTO chats (id, friend_id, status, notes, created_at, updated_at) VALUES (?, ?, 'unread', ?, ?, ?)`
+        ).bind(chatId, friend.id, `${label}の相談`, now, now).run();
+
+        // Slack通知 (Bot Token方式)
+        if (slackBotToken && slackChannelId) {
+          const meta = JSON.parse(friend.metadata || '{}');
+          const displayName = meta.real_name || friend.display_name || '不明';
+          await fetch('https://slack.com/api/chat.postMessage', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${slackBotToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              channel: slackChannelId,
+              text: `📩 LINE相談リクエスト\n*${displayName}* さんが「${label}」の相談を希望しています${userMessage ? `\n\n💬 元メッセージ: ${userMessage}` : ''}\n\n<https://with-kosen-line-admin.vercel.app/chats|管理画面で返信する>`,
+            }),
+          });
+        }
+      } catch (err) {
+        console.error('Failed to create chat/notify:', err);
+      }
+
+      if (event.replyToken) {
+        try {
+          await lineClient.replyMessage(event.replyToken, [
+            buildMessage('text', 'ありがとうございます！担当者に通知しました。\n少々お待ちください 🙏'),
+          ]);
+        } catch {}
+      }
+      return;
+    }
+
+    if (pbAction === 'inquiry_ob' || postbackData.startsWith('inquiry_ob')) {
+      if (event.replyToken) {
+        try {
+          await lineClient.replyMessage(event.replyToken, [
+            buildMessage('flex', JSON.stringify({
+              type: 'bubble',
+              body: {
+                type: 'box', layout: 'vertical', paddingAll: '20px',
+                contents: [
+                  { type: 'text', text: '高専OB/OGがキャリアの相談に乗ります！', size: 'md', weight: 'bold', color: '#1e293b', wrap: true },
+                  { type: 'text', text: '以下から相談内容を選んでください', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+                ],
+              },
+              footer: {
+                type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'sm',
+                contents: [
+                  { type: 'button', action: { type: 'postback', label: '就活について相談したい', data: `ob_consult_shukatsu${userMessage ? '&msg=' + encodeURIComponent(userMessage) : ''}`, displayText: '就活について相談したい' }, style: 'primary', color: '#06C755' },
+                  { type: 'button', action: { type: 'postback', label: 'インターンについて相談したい', data: `ob_consult_intern${userMessage ? '&msg=' + encodeURIComponent(userMessage) : ''}`, displayText: 'インターンについて相談したい' }, style: 'secondary' },
+                  { type: 'button', action: { type: 'postback', label: 'キャリア全般の相談', data: `ob_consult_career${userMessage ? '&msg=' + encodeURIComponent(userMessage) : ''}`, displayText: 'キャリア全般の相談' }, style: 'secondary' },
+                ],
+              },
+            })),
+          ]);
+        } catch {}
+      }
+      return;
+    }
+
+    if (pbAction === 'inquiry_mistake' || postbackData === 'inquiry_mistake') {
+      if (event.replyToken) {
+        try {
+          await lineClient.replyMessage(event.replyToken, [
+            buildMessage('text', '了解しました！何かあればお気軽にメッセージください 😊'),
+          ]);
+        } catch {}
+      }
+      return;
+    }
 
     const params = new URLSearchParams(postbackData);
     const action = params.get('action');
@@ -396,7 +745,7 @@ async function handleEvent(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ line_user_id: userId, venue_id: venueId, region }),
         });
-        const data = await res.json() as { success?: boolean; already_registered?: boolean; error?: string };
+        const data = await res.json() as { success?: boolean; already_registered?: boolean; error?: string; student_name?: string; school_name?: string; grade?: number; registration_count?: number };
 
         // Add applied tag in Harness
         if (appliedTagId && (data.success || data.already_registered)) {
@@ -421,6 +770,20 @@ async function handleEvent(
             await lineClient.replyMessage(event.replyToken, [
               buildMessage('text', `参加申込みを受け付けました！🎉\n\n${region ? `${region}地区の` : ''}ISセミナーでお会いしましょう。\n当日の詳細は開催前にお知らせします。`),
             ]);
+            // Slack通知
+            if (slackBotToken && slackChannelId) {
+              const gradeLabel = data.grade
+                ? data.grade >= 6 ? `専攻科${data.grade - 5}年` : `本科${data.grade}年`
+                : '';
+              await fetch('https://slack.com/api/chat.postMessage', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${slackBotToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  channel: slackChannelId,
+                  text: `🎉 イベント参加申込み\n*${data.student_name || '不明'}* さんが${region ? `${region}地区の` : ''}ISセミナーに申し込みました\n\n🏫 ${data.school_name || '不明'} ${gradeLabel}\n📊 ${region || ''}地区 ${data.registration_count}人目の申込み`,
+                }),
+              });
+            }
           } else if (data.error === 'student_not_found') {
             await lineClient.replyMessage(event.replyToken, [
               buildMessage('text', '先にプロフィール登録をお願いします。\n\nhttps://admin.withkosen.prossell.jp/api/public/line-auth'),
@@ -442,6 +805,85 @@ async function handleEvent(
         }
       }
     }
+
+    // OB相談・質問系 postback ハンドラ
+    if (postbackData.startsWith('ob_consult_') || postbackData === 'inquiry_question') {
+      try {
+        await lineClient.replyMessage(event.replyToken, [
+          buildMessage('text', 'ありがとうございます！担当者に通知しました。少々お待ちください。'),
+        ]);
+
+        // Slack通知（SLACK_WEBHOOK_URL が設定されている場合）
+        const friend = await getFriendByLineUserId(db, userId);
+        const displayName = friend?.display_name || userId;
+        const label = postbackData === 'inquiry_question' ? '質問'
+          : postbackData === 'ob_consult_shukatsu' ? 'OB相談: 就活'
+          : postbackData === 'ob_consult_intern' ? 'OB相談: インターン'
+          : 'OB相談: キャリア全般';
+
+        if (slackBotToken && slackChannelId) {
+          try {
+            await fetch('https://slack.com/api/chat.postMessage', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${slackBotToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                channel: slackChannelId,
+                text: `📩 [With Kosen LINE] ${displayName} さんから「${label}」のリクエストがありました。\n<https://with-kosen-line-admin.vercel.app/chats|管理画面で確認>`,
+              }),
+            });
+          } catch (slackErr) {
+            console.error('Failed to send Slack notification:', slackErr);
+          }
+        } else {
+          console.log(`[Slack notification] ${displayName} さんから「${label}」のリクエスト (SLACK_WEBHOOK_URL未設定)`);
+        }
+      } catch (err) {
+        console.error('Failed to handle ob_consult/inquiry_question postback:', err);
+      }
+    }
+
+    // inquiry_ob: 高専OBに相談するメニューを表示
+    if (postbackData === 'inquiry_ob') {
+      try {
+        await lineClient.replyMessage(event.replyToken, [
+          buildMessage('flex', JSON.stringify({
+            type: 'bubble',
+            body: {
+              type: 'box', layout: 'vertical', paddingAll: '20px',
+              contents: [
+                { type: 'text', text: '高専OB/OGがキャリアの相談に乗ります！', size: 'md', weight: 'bold', color: '#1e293b', wrap: true },
+                { type: 'text', text: '以下から相談内容を選んでください', size: 'sm', color: '#64748b', wrap: true, margin: 'md' },
+              ],
+            },
+            footer: {
+              type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'sm',
+              contents: [
+                { type: 'button', action: { type: 'postback', label: '就活について相談したい', data: 'ob_consult_shukatsu', displayText: '就活について相談したい' }, style: 'primary', color: '#06C755' },
+                { type: 'button', action: { type: 'postback', label: 'インターンについて相談したい', data: 'ob_consult_intern', displayText: 'インターンについて相談したい' }, style: 'secondary' },
+                { type: 'button', action: { type: 'postback', label: 'キャリア全般の相談', data: 'ob_consult_career', displayText: 'キャリア全般の相談' }, style: 'secondary' },
+              ],
+            },
+          })),
+        ]);
+      } catch (err) {
+        console.error('Failed to handle inquiry_ob postback:', err);
+      }
+    }
+
+    // inquiry_mistake: 間違いでしたの応答
+    if (postbackData === 'inquiry_mistake') {
+      try {
+        await lineClient.replyMessage(event.replyToken, [
+          buildMessage('text', '了解しました！何かあればお気軽にメッセージください😊'),
+        ]);
+      } catch (err) {
+        console.error('Failed to handle inquiry_mistake postback:', err);
+      }
+    }
+
     return;
   }
 }

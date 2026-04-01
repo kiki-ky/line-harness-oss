@@ -1,17 +1,17 @@
-name = "line-harness"
+name = "with-kosen-line"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 workers_dev = true
-account_id = "YOUR_DEV_ACCOUNT_ID"
+account_id = "b32ce58bb2d7cf4cf57643897a92bd32"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "line-harness"
-database_id = "YOUR_DEV_D1_DATABASE_ID"
+database_name = "with-kosen-line"
+database_id = "54c95b1a-3eb3-43a5-9eef-51e140b987ee"
 
-[[r2_buckets]]
-binding = "IMAGES"
-bucket_name = "line-harness-images"
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "line-harness-images"
 
 [triggers]
 crons = ["*/5 * * * *"]

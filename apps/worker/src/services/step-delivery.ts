@@ -22,11 +22,14 @@ import { jitterDeliveryTime, addJitter, sleep } from './stealth.js';
  */
 export function expandVariables(
   content: string,
-  friend: { id: string; display_name: string | null; user_id: string | null; ref_code?: string | null },
+  friend: { id: string; display_name: string | null; user_id: string | null; ref_code?: string | null; metadata?: string | null },
   apiOrigin?: string,
 ): string {
   let result = content;
-  result = result.replace(/\{\{name\}\}/g, friend.display_name || '');
+  // {{name}}: prefer real_name from metadata, fall back to LINE display_name
+  const meta = friend.metadata ? (typeof friend.metadata === 'string' ? JSON.parse(friend.metadata) : friend.metadata) : {};
+  const name = meta.real_name || friend.display_name || '';
+  result = result.replace(/\{\{name\}\}/g, name);
   result = result.replace(/\{\{uid\}\}/g, friend.user_id || '');
   result = result.replace(/\{\{friend_id\}\}/g, friend.id);
   result = result.replace(/\{\{ref\}\}/g, friend.ref_code || '');

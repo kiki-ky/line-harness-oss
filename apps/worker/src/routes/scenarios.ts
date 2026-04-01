@@ -176,7 +176,14 @@ scenarios.put('/api/scenarios/:id', async (c) => {
       triggerType?: ScenarioTriggerType;
       triggerTagId?: string | null;
       isActive?: boolean;
+      lineAccountId?: string | null;
     }>();
+
+    // Update line_account_id if provided
+    if (body.lineAccountId !== undefined) {
+      await c.env.DB.prepare(`UPDATE scenarios SET line_account_id = ? WHERE id = ?`)
+        .bind(body.lineAccountId, id).run();
+    }
 
     const updated = await updateScenario(c.env.DB, id, {
       name: body.name,

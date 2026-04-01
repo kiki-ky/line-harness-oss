@@ -67,8 +67,8 @@ friends.get('/api/friends', async (c) => {
       binds.push(lineAccountId);
     }
     if (search) {
-      conditions.push('f.display_name LIKE ?');
-      binds.push(`%${search}%`);
+      conditions.push('(f.display_name LIKE ? OR f.line_user_id = ?)');
+      binds.push(`%${search}%`, search);
     }
     // Metadata filters: ?metadata.key=value (e.g. ?metadata.monthly_cost=〜100万円)
     const url = new URL(c.req.url);
@@ -260,6 +260,37 @@ friends.delete('/api/friends/:id/tags/:tagId', async (c) => {
     return c.json({ success: true, data: null });
   } catch (err) {
     console.error('DELETE /api/friends/:id/tags/:tagId error:', err);
+    return c.json({ success: false, error: 'Internal server error' }, 500);
+  }
+});
+
+// DELETE /api/friends/:id/scenarios - reset all scenario enrollments
+friends.delete('/api/friends/:id/scenarios', async (c) => {
+  try {
+    const friendId = c.req.param('id');
+    const db = c.env.DB;
+    await db.prepare('DELETE FROM friend_scenarios WHERE friend_id = ?').bind(friendId).run();
+    return c.json({ success: true, data: null });
+  } catch (err) {
+    console.error('DELETE /api/friends/:id/scenarios error:', err);
+    return c.json({ success: false, error: 'Internal server error' }, 500);
+  }
+});
+
+// PATCH /api/friends/:id - update display_name etc
+friends.patch('/api/friends/:id', async (c) => {
+  try {
+    const friendId = c.req.param('id');
+    const db = c.env.DB;
+    const body = await c.req.json<{ displayName?: string }>();
+    if (body.displayName) {
+      await db.prepare('UPDATE friends SET display_name = ?, updated_at = ? WHERE id = ?')
+        .bind(body.displayName, jstNow(), friendId).run();
+    }
+    const updated = await getFriendById(db, friendId);
+    return c.json({ success: true, data: updated });
+  } catch (err) {
+    console.error('PATCH /api/friends/:id error:', err);
     return c.json({ success: false, error: 'Internal server error' }, 500);
   }
 });

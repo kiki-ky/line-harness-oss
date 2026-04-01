@@ -100,17 +100,13 @@ liffRoutes.get('/auth/line', async (c) => {
   if (accountParam) qrParams.set('account', accountParam);
   const qrUrl = qrParams.toString() ? `${liffUrl}?${qrParams.toString()}` : liffUrl;
 
-  // Mobile: redirect to LIFF URL (opens LINE app directly)
-  // Exception: cross-account links (account param) use OAuth directly
-  // because Account A's LIFF can't open from Account B's LINE chat
+  // Mobile: use OAuth with bot_prompt=aggressive to ensure friend-add before form
+  // Previously redirected to LIFF URL directly, but that allowed form submission
+  // without friend-adding first. OAuth flow forces the friend-add prompt.
   const ua = (c.req.header('user-agent') || '').toLowerCase();
   const isMobile = /iphone|ipad|android|mobile/.test(ua);
   if (isMobile) {
-    if (accountParam) {
-      // Cross-account: use OAuth (LIFF won't work across accounts)
-      return c.redirect(loginUrl.toString());
-    }
-    return c.redirect(qrUrl);
+    return c.redirect(loginUrl.toString());
   }
 
   // PC: show QR code page
@@ -398,8 +394,11 @@ liffRoutes.get('/auth/callback', async (c) => {
       }
     }
 
-    // Auto-enroll in friend_add scenarios + immediate delivery (skip delivery window)
-    try {
+    // Skip scenario enrollment here — let the follow webhook handle it
+    // OAuth callback + follow webhook race condition causes push to fail
+    // The webhook handler uses replyToken (free) and is more reliable
+    const SKIP_SCENARIO_IN_CALLBACK = true;
+    if (!SKIP_SCENARIO_IN_CALLBACK) try {
       const { getScenarios, enrollFriendInScenario: enroll, getScenarioSteps } = await import('@line-crm/db');
       const { LineClient } = await import('@line-crm/line-sdk');
       const { buildMessage, expandVariables } = await import('../services/step-delivery.js');
