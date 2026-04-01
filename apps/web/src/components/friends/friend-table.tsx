@@ -273,7 +273,7 @@ export default function FriendTable({ friends, allTags, onRefresh }: FriendTable
                                 type="text"
                                 value={expandedId === friend.id ? messageText : ''}
                                 onChange={(e) => setMessageText(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(friend.id) } }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendMessage(friend.id) } }}
                                 placeholder="メッセージを入力..."
                                 className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                               />
