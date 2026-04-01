@@ -9,38 +9,26 @@ on:
       - 'packages/shared/**'
       - '.github/workflows/deploy-admin.yml'
 
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build shared package
-        run: pnpm --filter @line-crm/shared build
-
-      - name: Build admin web
-        run: pnpm --filter @line-crm/web build
+      - name: Trigger Vercel Redeploy
         env:
-          NEXT_PUBLIC_API_URL: https://with-kosen-line.kazuki-yokoyama.workers.dev
-
-      - name: Install Vercel CLI
-        run: npm i -g vercel
-
-      - name: Deploy to Vercel
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: apps/web
+          # Find latest successful deployment
+          LATEST=$(curl -s "https://api.vercel.com/v6/deployments?projectId=prj_TZkQGwPmvKI5qf7iFk2L26Y42SA9&teamId=team_fJdovYrWEmYhpN4q6gE0AaSO&limit=5&state=READY&target=production" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r '.deployments[0].uid')
+
+          echo "Redeploying from: $LATEST"
+
+          # Trigger redeploy
+          RESULT=$(curl -s -X POST "https://api.vercel.com/v13/deployments?teamId=team_fJdovYrWEmYhpN4q6gE0AaSO" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"with-kosen-line-admin\",\"deploymentId\":\"$LATEST\",\"target\":\"production\"}")
+
+          echo "$RESULT" | jq '{id: .id, url: .url, readyState: .readyState}'
