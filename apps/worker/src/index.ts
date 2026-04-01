@@ -109,7 +109,15 @@ app.delete('/api/friends/:id', async (c) => {
   await db.prepare('DELETE FROM friend_scenarios WHERE friend_id = ?').bind(id).run();
   await db.prepare('DELETE FROM messages_log WHERE friend_id = ?').bind(id).run();
   await db.prepare('DELETE FROM chats WHERE friend_id = ?').bind(id).run();
+  await db.prepare('DELETE FROM ref_tracking WHERE friend_id = ?').bind(id).run();
   await db.prepare('DELETE FROM friends WHERE id = ?').bind(id).run();
+  return c.json({ success: true });
+});
+
+// POST /api/admin/reset-ref-tracking — clear all ref tracking data (for testing)
+app.post('/api/admin/reset-ref-tracking', async (c) => {
+  const db = c.env.DB;
+  await db.prepare('DELETE FROM ref_tracking').run();
   return c.json({ success: true });
 });
 

@@ -5,6 +5,7 @@ const URL_REGEX = /https?:\/\/[^\s"'<>\])}]+/g;
 // URLs that should NOT be wrapped (internal/system URLs)
 const SKIP_PATTERNS = [
   /\/t\/[0-9a-f-]{36}/,       // already a tracking link
+  /\/line\/t\//,               // already a proxied tracking link
   /liff\.line\.me/,            // LIFF URLs
   /line\.me\/R\//,             // LINE deep links
   /line-crm-worker/,           // our own worker
@@ -29,6 +30,7 @@ async function createTrackingMap(
   db: D1Database,
   urls: Set<string>,
   workerUrl: string,
+  friendId?: string,
 ): Promise<Map<string, { trackingUrl: string; originalUrl: string; label: string }>> {
   const urlMap = new Map<string, { trackingUrl: string; originalUrl: string; label: string }>();
   for (const url of urls) {
@@ -36,8 +38,9 @@ async function createTrackingMap(
       name: `auto: ${url.slice(0, 60)}`,
       originalUrl: url,
     });
-    // Use direct /t/ URL — Worker handles LINE app detection and LIFF redirect server-side
-    const trackingUrl = `${workerUrl}/t/${link.id}`;
+    // Include friendId param so /t/ handler skips LIFF redirect (friend already known)
+    const friendParam = friendId ? `?f=${friendId}` : '';
+    const trackingUrl = `${workerUrl}/t/${link.id}${friendParam}`;
     const hostname = new URL(url).hostname.replace('www.', '');
     const label = hostname.length > 20 ? hostname.slice(0, 20) + '…' : hostname;
     urlMap.set(url, { trackingUrl, originalUrl: url, label });
@@ -115,13 +118,14 @@ export async function autoTrackContent(
   messageType: string,
   content: string,
   workerUrl: string,
+  friendId?: string,
 ): Promise<AutoTrackResult> {
   if (messageType === 'image') return { messageType, content };
 
   const urls = extractUrls(content);
   if (urls.size === 0) return { messageType, content };
 
-  const urlMap = await createTrackingMap(db, urls, workerUrl);
+  const urlMap = await createTrackingMap(db, urls, workerUrl, friendId);
 
   // Text messages → convert to Flex with buttons
   if (messageType === 'text') {

@@ -205,31 +205,42 @@ friends.post('/api/friends/:id/tags', async (c) => {
     // Enroll in tag_added scenarios that match this tag
     let enrolled = false;
     const allScenarios = await getScenarios(db);
+    console.log(`[tag-add] friendId=${friendId} tagId=${body.tagId} scenarios=${allScenarios.length}`);
     for (const scenario of allScenarios) {
+      console.log(`[tag-add] checking: ${scenario.name} trigger=${scenario.trigger_type} tagId=${scenario.trigger_tag_id} active=${scenario.is_active} match=${scenario.trigger_tag_id === body.tagId}`);
       if (scenario.trigger_type === 'tag_added' && scenario.is_active && scenario.trigger_tag_id === body.tagId) {
         const existing = await db
           .prepare(`SELECT id FROM friend_scenarios WHERE friend_id = ? AND scenario_id = ?`)
           .bind(friendId, scenario.id)
           .first();
+        console.log(`[tag-add] MATCHED ${scenario.name} existing=${!!existing}`);
         if (!existing) {
-          await enrollFriendInScenario(db, friendId, scenario.id);
-          enrolled = true;
+          try {
+            await enrollFriendInScenario(db, friendId, scenario.id);
+            enrolled = true;
+            console.log(`[tag-add] ENROLLED in ${scenario.name}`);
+          } catch (enrollErr) {
+            console.error(`[tag-add] ENROLL FAILED:`, enrollErr);
+          }
         }
       }
     }
 
     // Immediately deliver due steps (don't wait for cron)
+    console.log(`[tag-add] enrolled=${enrolled}`);
     if (enrolled) {
       try {
         const { LineClient } = await import('@line-crm/line-sdk');
         const friend = await getFriendById(db, friendId);
         let accessToken = c.env.LINE_CHANNEL_ACCESS_TOKEN;
+        console.log(`[tag-add] friend=${friend?.id} hasToken=${!!accessToken}`);
         if (friend && (friend as unknown as Record<string, unknown>).line_account_id) {
           const { getLineAccountById } = await import('@line-crm/db');
           const account = await getLineAccountById(db, (friend as unknown as Record<string, unknown>).line_account_id as string);
           if (account) accessToken = account.channel_access_token;
         }
         const lineClient = new LineClient(accessToken);
+        console.log(`[tag-add] calling processStepDeliveries`);
         await processStepDeliveries(db, lineClient, c.env.WORKER_URL || new URL(c.req.url).origin);
       } catch (err) {
         console.error('Immediate step delivery after tag_added failed:', err);

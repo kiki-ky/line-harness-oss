@@ -335,12 +335,7 @@ export async function enrollFriendInScenario(
   }
 
   const rawDate = new Date(Date.now() + 9 * 60 * 60_000 + firstStep.delay_minutes * 60_000);
-  // Enforce 9:00-21:00 JST delivery window
-  const hours = rawDate.getUTCHours();
-  if (hours < 9 || hours >= 21) {
-    if (hours >= 21) rawDate.setUTCDate(rawDate.getUTCDate() + 1);
-    rawDate.setUTCHours(9, 0, 0, 0);
-  }
+  // No delivery window restriction — deliver immediately
   const nextDeliveryAt = rawDate.toISOString().slice(0, -1) + '+09:00';
 
   await db

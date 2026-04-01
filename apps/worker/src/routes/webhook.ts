@@ -408,28 +408,13 @@ async function handleEvent(
               if (areaScenario) {
                 const steps = await getScenarioSteps(db, areaScenario.id);
                 if (steps[0]) {
-                  let expandedContent = expandVariables(steps[0].message_content, friend as { id: string; display_name: string | null; user_id: string | null; metadata?: string | null });
-                  // 交通費を動的に追加
-                  try {
-                    const costRes = await fetch(`https://withkosen.prossell.jp/api/public/transport-cost?line_user_id=${userId}`);
-                    if (costRes.ok) {
-                      const costData = await costRes.json() as { transport_cost?: number | null };
-                      if (costData.transport_cost != null && steps[0].message_type === 'flex') {
-                        const flexJson = JSON.parse(expandedContent);
-                        const costText = costData.transport_cost > 0
-                          ? `💰 交通費補助: 往復${costData.transport_cost.toLocaleString()}円をサポート`
-                          : '💰 交通費補助: 会場が近いため補助対象外';
-                        // bodyのcontentsの最後に交通費情報を追加
-                        if (flexJson.body?.contents) {
-                          flexJson.body.contents.push(
-                            { type: 'separator', margin: 'lg' },
-                            { type: 'text', text: costText, size: 'sm', weight: 'bold', color: '#059669', wrap: true, margin: 'lg' }
-                          );
-                        }
-                        expandedContent = JSON.stringify(flexJson);
-                      }
-                    }
-                  } catch {}
+                  const { expandVariablesAsync } = await import('../services/step-delivery.js');
+                  let expandedContent = await expandVariablesAsync(
+                    steps[0].message_content,
+                    { ...friend, line_user_id: userId } as any,
+                    workerUrl,
+                    'https://withkosen.prossell.jp'
+                  );
                   const message = buildMessage(steps[0].message_type, expandedContent);
                   await lineClient.replyMessage(event.replyToken, [message]);
                 } else {
@@ -670,7 +655,7 @@ async function handleEvent(
             },
             body: JSON.stringify({
               channel: slackChannelId,
-              text: `📩 LINE相談リクエスト\n*${displayName}* さんが「${label}」の相談を希望しています${userMessage ? `\n\n💬 元メッセージ: ${userMessage}` : ''}\n\n<https://with-kosen-line-admin.vercel.app/chats|管理画面で返信する>`,
+              text: `📩 LINE相談リクエスト\n*${displayName}* さんが「${label}」の相談を希望しています${userMessage ? `\n\n💬 元メッセージ: ${userMessage}` : ''}\n\n<https://line-admin.withkosen.prossell.jp/chats|管理画面で返信する>`,
             }),
           });
         }
@@ -738,7 +723,7 @@ async function handleEvent(
       if (!venueId) return;
 
       // Call Platform API to create registration
-      const platformUrl = 'https://admin.withkosen.prossell.jp/api/public/apply-event';
+      const platformUrl = 'https://withkosen.prossell.jp/api/public/apply-event';
       try {
         const res = await fetch(platformUrl, {
           method: 'POST',
@@ -786,7 +771,7 @@ async function handleEvent(
             }
           } else if (data.error === 'student_not_found') {
             await lineClient.replyMessage(event.replyToken, [
-              buildMessage('text', '先にプロフィール登録をお願いします。\n\nhttps://admin.withkosen.prossell.jp/api/public/line-auth'),
+              buildMessage('text', '先にプロフィール登録をお願いします。\n\nhttps://withkosen.prossell.jp/api/public/line-auth'),
             ]);
           } else {
             await lineClient.replyMessage(event.replyToken, [
@@ -831,7 +816,7 @@ async function handleEvent(
               },
               body: JSON.stringify({
                 channel: slackChannelId,
-                text: `📩 [With Kosen LINE] ${displayName} さんから「${label}」のリクエストがありました。\n<https://with-kosen-line-admin.vercel.app/chats|管理画面で確認>`,
+                text: `📩 [With Kosen LINE] ${displayName} さんから「${label}」のリクエストがありました。\n<https://line-admin.withkosen.prossell.jp/chats|管理画面で確認>`,
               }),
             });
           } catch (slackErr) {

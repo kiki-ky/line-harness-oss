@@ -20,6 +20,40 @@ import { jitterDeliveryTime, addJitter, sleep } from './stealth.js';
  * - {{friend_id}}           → friend's internal ID
  * - {{auth_url:CHANNEL_ID}} → full /auth/line URL with uid for cross-account linking
  */
+export async function expandVariablesAsync(
+  content: string,
+  friend: { id: string; display_name: string | null; user_id: string | null; line_user_id?: string; ref_code?: string | null; metadata?: string | null },
+  apiOrigin?: string,
+  platformUrl?: string,
+): Promise<string> {
+  let result = expandVariables(content, friend, apiOrigin);
+
+  // {{transport_cost}}: fetch from Platform API
+  if (result.includes('{{transport_cost}}') && friend.line_user_id && platformUrl) {
+    try {
+      const res = await fetch(`${platformUrl}/api/public/transport-cost?line_user_id=${friend.line_user_id}`);
+      if (res.ok) {
+        const data = await res.json() as { transport_cost: number | null };
+        const cost = data.transport_cost != null ? `${data.transport_cost.toLocaleString()}円` : '確認中';
+        result = result.replace(/\{\{transport_cost\}\}/g, cost);
+      }
+    } catch {
+      result = result.replace(/\{\{transport_cost\}\}/g, '確認中');
+    }
+  }
+  // {{#if_transport_cost}}...{{/if_transport_cost}} conditional block
+  if (result.includes('{{#if_transport_cost}}')) {
+    const hasCost = !result.includes('確認中') && !result.includes('{{transport_cost}}');
+    if (hasCost) {
+      result = result.replace(/\{\{#if_transport_cost\}\}([\s\S]*?)\{\{\/if_transport_cost\}\}/g, '$1');
+    } else {
+      result = result.replace(/\{\{#if_transport_cost\}\}[\s\S]*?\{\{\/if_transport_cost\}\}/g, '');
+    }
+  }
+
+  return result;
+}
+
 export function expandVariables(
   content: string,
   friend: { id: string; display_name: string | null; user_id: string | null; ref_code?: string | null; metadata?: string | null },
@@ -75,10 +109,7 @@ export async function processStepDeliveries(
   lineClient: LineClient,
   workerUrl?: string,
 ): Promise<void> {
-  // Skip delivery outside 9:00-23:00 JST window
-  const jstHour = new Date(Date.now() + 9 * 60 * 60_000).getUTCHours();
-  if (jstHour < DEFAULT_START_HOUR || jstHour >= DEFAULT_END_HOUR) return;
-
+  // No delivery window restriction — deliver anytime
   const now = jstNow();
   const dueFriendScenarios = await getFriendScenariosDueForDelivery(db, now);
 
@@ -165,14 +196,14 @@ async function processSingleDelivery(
     }
   }
 
-  // Expand template variables ({{name}}, {{uid}}, {{auth_url:CHANNEL_ID}}, etc.)
-  const expandedContent = expandVariables(currentStep.message_content, friend, workerUrl);
+  // Expand template variables ({{name}}, {{uid}}, {{transport_cost}}, etc.)
+  const expandedContent = await expandVariablesAsync(currentStep.message_content, friend, workerUrl, 'https://withkosen.prossell.jp');
   // Auto-wrap URLs with tracking links (text with URLs → Flex with button)
   let trackedType: string = currentStep.message_type;
   let trackedContent = expandedContent;
   if (workerUrl) {
     const { autoTrackContent } = await import('./auto-track.js');
-    const tracked = await autoTrackContent(db, currentStep.message_type, expandedContent, workerUrl);
+    const tracked = await autoTrackContent(db, currentStep.message_type, expandedContent, workerUrl, friend.id);
     trackedType = tracked.messageType;
     trackedContent = tracked.content;
   }
