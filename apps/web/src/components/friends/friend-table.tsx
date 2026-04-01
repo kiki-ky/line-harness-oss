@@ -270,12 +270,13 @@ export default function FriendTable({ friends, allTags, onRefresh }: FriendTable
                             <p className="text-xs font-semibold text-gray-500 mb-2">メッセージ送信</p>
                             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                               <textarea
+                                ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px' } }}
                                 value={expandedId === friend.id ? messageText : ''}
-                                onChange={(e) => setMessageText(e.target.value)}
+                                onChange={(e) => { setMessageText(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px' }}
                                 onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendMessage(friend.id) } }}
                                 placeholder="メッセージを入力..."
-                                rows={3}
-                                className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
+                                rows={1}
+                                className="flex-1 text-sm border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none overflow-hidden"
                               />
                               <button
                                 onClick={() => handleSendMessage(friend.id)}
