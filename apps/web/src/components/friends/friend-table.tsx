@@ -286,6 +286,7 @@ export default function FriendTable({ friends, allTags, onRefresh }: FriendTable
                                 {sendingMessage ? '送信中...' : '送信'}
                               </button>
                             </div>
+                            <p className="text-xs text-gray-400 mt-1">Cmd+Enter / Ctrl+Enter で送信</p>
                             {messageSent === friend.id && (
                               <p className="text-xs text-green-600 mt-1">送信しました</p>
                             )}
