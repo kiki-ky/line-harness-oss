@@ -92,6 +92,11 @@ export const api = {
       fetchApi<ApiResponse<null>>(`/api/friends/${friendId}/tags/${tagId}`, {
         method: 'DELETE',
       }),
+    sendMessage: (friendId: string, content: string) =>
+      fetchApi<ApiResponse<null>>(`/api/friends/${friendId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
   },
   tags: {
     list: () =>

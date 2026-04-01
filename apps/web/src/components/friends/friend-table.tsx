@@ -18,6 +18,9 @@ export default function FriendTable({ friends, allTags, onRefresh }: FriendTable
   const [selectedTagId, setSelectedTagId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [messageText, setMessageText] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const [messageSent, setMessageSent] = useState<string | null>(null)
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id)
@@ -39,6 +42,22 @@ export default function FriendTable({ friends, allTags, onRefresh }: FriendTable
       setError('タグの追加に失敗しました')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSendMessage = async (friendId: string) => {
+    if (!messageText.trim()) return
+    setSendingMessage(true)
+    setError('')
+    try {
+      await api.friends.sendMessage(friendId, messageText.trim())
+      setMessageText('')
+      setMessageSent(friendId)
+      setTimeout(() => setMessageSent(null), 3000)
+    } catch {
+      setError('メッセージの送信に失敗しました')
+    } finally {
+      setSendingMessage(false)
     }
   }
 
@@ -244,6 +263,34 @@ export default function FriendTable({ friends, allTags, onRefresh }: FriendTable
                             )
                           )}
                         </div>
+
+                        {/* Message sending */}
+                        {friend.isFollowing && (
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500 mb-2">メッセージ送信</p>
+                            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="text"
+                                value={expandedId === friend.id ? messageText : ''}
+                                onChange={(e) => setMessageText(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(friend.id) } }}
+                                placeholder="メッセージを入力..."
+                                className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              />
+                              <button
+                                onClick={() => handleSendMessage(friend.id)}
+                                disabled={sendingMessage || !messageText.trim()}
+                                className="px-4 py-2 text-sm font-medium rounded-lg text-white disabled:opacity-50 transition-opacity"
+                                style={{ backgroundColor: '#06C755' }}
+                              >
+                                {sendingMessage ? '送信中...' : '送信'}
+                              </button>
+                            </div>
+                            {messageSent === friend.id && (
+                              <p className="text-xs text-green-600 mt-1">送信しました</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
