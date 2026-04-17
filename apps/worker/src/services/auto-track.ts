@@ -1,5 +1,8 @@
 import { createTrackedLink } from '@line-crm/db';
 
+// Markdown-style [label](https://url) — label takes priority over auto-derived
+const MD_LINK_REGEX = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g;
+// Plain URLs (used for leftover URLs not wrapped in markdown syntax)
 const URL_REGEX = /https?:\/\/[^\s"'<>\])}]+/g;
 
 // URLs that should NOT be wrapped (internal/system URLs)
@@ -15,50 +18,88 @@ function shouldSkip(url: string): boolean {
   return SKIP_PATTERNS.some((p) => p.test(url));
 }
 
-/** Extract trackable URLs from content string */
-function extractUrls(content: string): Set<string> {
-  const urls = new Set<string>();
-  for (const match of content.matchAll(URL_REGEX)) {
-    const url = match[0].replace(/[.,;:!?)]+$/, '');
-    if (!shouldSkip(url)) urls.add(url);
-  }
-  return urls;
+interface ExtractedLink {
+  /** Exact substring from content to remove during cleanup — e.g. "[ラベル](https://...)" or "https://..." */
+  matchedText: string;
+  /** The URL to track */
+  url: string;
+  /** Optional author-provided label from markdown syntax */
+  label?: string;
 }
 
-/** Create tracking links and return a map of original → tracking URL */
-async function createTrackingMap(
+/**
+ * Derive a button label from a raw URL string.
+ * Uses the raw string (not URL.hostname) to preserve Unicode IDN — otherwise
+ * `領収書.net` becomes `xn--lorw95b519a.net`.
+ */
+function deriveLabelFromUrl(url: string): string {
+  let host = url.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  const slashIdx = host.indexOf('/');
+  if (slashIdx >= 0) host = host.slice(0, slashIdx);
+  return host.length > 20 ? host.slice(0, 20) + '…' : host;
+}
+
+/** Extract all trackable links from the content, markdown-style first, then raw URLs. */
+function extractLinks(content: string): ExtractedLink[] {
+  const links: ExtractedLink[] = [];
+  const claimedUrls = new Set<string>();
+
+  for (const match of content.matchAll(MD_LINK_REGEX)) {
+    const [matchedText, label, url] = match;
+    const cleanUrl = url.replace(/[.,;:!?)]+$/, '');
+    if (shouldSkip(cleanUrl)) continue;
+    links.push({ matchedText, url: cleanUrl, label: label.trim() });
+    claimedUrls.add(cleanUrl);
+  }
+
+  for (const match of content.matchAll(URL_REGEX)) {
+    const rawUrl = match[0].replace(/[.,;:!?)]+$/, '');
+    if (shouldSkip(rawUrl) || claimedUrls.has(rawUrl)) continue;
+    // Skip URLs already consumed by a markdown link (the `](url)` part overlaps)
+    const mdMatch = content.slice(0, match.index).match(/\[[^\]\n]*\]\(\s*$/);
+    if (mdMatch) continue;
+    links.push({ matchedText: rawUrl, url: rawUrl });
+    claimedUrls.add(rawUrl);
+  }
+
+  return links;
+}
+
+interface TrackedLinkInfo {
+  matchedText: string;
+  originalUrl: string;
+  trackingUrl: string;
+  label: string;
+}
+
+async function createTrackingLinks(
   db: D1Database,
-  urls: Set<string>,
+  links: ExtractedLink[],
   workerUrl: string,
   friendId?: string,
-): Promise<Map<string, { trackingUrl: string; originalUrl: string; label: string }>> {
-  const urlMap = new Map<string, { trackingUrl: string; originalUrl: string; label: string }>();
-  for (const url of urls) {
-    const link = await createTrackedLink(db, {
-      name: `auto: ${url.slice(0, 60)}`,
-      originalUrl: url,
+): Promise<TrackedLinkInfo[]> {
+  const out: TrackedLinkInfo[] = [];
+  for (const link of links) {
+    const record = await createTrackedLink(db, {
+      name: `auto: ${(link.label ?? link.url).slice(0, 60)}`,
+      originalUrl: link.url,
     });
-    // Include friendId param so /t/ handler skips LIFF redirect (friend already known)
     const friendParam = friendId ? `?f=${friendId}` : '';
-    const trackingUrl = `${workerUrl}/t/${link.id}${friendParam}`;
-    const hostname = new URL(url).hostname.replace('www.', '');
-    const label = hostname.length > 20 ? hostname.slice(0, 20) + '…' : hostname;
-    urlMap.set(url, { trackingUrl, originalUrl: url, label });
+    const trackingUrl = `${workerUrl}/t/${record.id}${friendParam}`;
+    const rawLabel = link.label ?? deriveLabelFromUrl(link.url);
+    // LINE button label limit is 20 chars
+    const label = rawLabel.length > 20 ? rawLabel.slice(0, 20) + '…' : rawLabel;
+    out.push({ matchedText: link.matchedText, originalUrl: link.url, trackingUrl, label });
   }
-  return urlMap;
+  return out;
 }
 
 /** Build a Flex bubble from text + tracked URLs */
-function textToFlex(
-  text: string,
-  links: { trackingUrl: string; originalUrl: string; label: string }[],
-): string {
-  // Remove URLs from the text body
+function textToFlex(text: string, links: TrackedLinkInfo[]): string {
   let cleanText = text;
   for (const link of links) {
-    cleanText = cleanText.split(link.originalUrl).join('').trim();
+    cleanText = cleanText.split(link.matchedText).join('').trim();
   }
-  // Clean up leftover whitespace/punctuation
   cleanText = cleanText.replace(/\s{2,}/g, ' ').replace(/[👉🔗➡️]\s*$/g, '').trim();
 
   const bodyContents: unknown[] = [];
@@ -76,7 +117,7 @@ function textToFlex(
     type: 'button',
     action: {
       type: 'uri',
-      label: `${link.label} を開く`,
+      label: link.label,
       uri: link.trackingUrl,
     },
     style: 'primary',
@@ -111,6 +152,7 @@ export interface AutoTrackResult {
 /**
  * Auto-wrap URLs in message content with tracking links.
  * For text messages with URLs, converts to Flex with button.
+ * Supports markdown-style `[ラベル](https://...)` for custom button labels.
  * For flex messages, replaces URLs inline.
  */
 export async function autoTrackContent(
@@ -122,24 +164,33 @@ export async function autoTrackContent(
 ): Promise<AutoTrackResult> {
   if (messageType === 'image') return { messageType, content };
 
-  const urls = extractUrls(content);
-  if (urls.size === 0) return { messageType, content };
-
-  const urlMap = await createTrackingMap(db, urls, workerUrl, friendId);
-
-  // Text messages → convert to Flex with buttons
   if (messageType === 'text') {
-    const links = Array.from(urlMap.values());
+    const links = extractLinks(content);
+    if (links.length === 0) return { messageType, content };
+    const tracked = await createTrackingLinks(db, links, workerUrl, friendId);
     return {
       messageType: 'flex',
-      content: textToFlex(content, links),
+      content: textToFlex(content, tracked),
     };
   }
 
-  // Flex messages → replace URLs inline in the JSON
+  // Flex messages → replace URLs inline in the JSON (markdown syntax is unlikely here)
+  const urls = new Set<string>();
+  for (const match of content.matchAll(URL_REGEX)) {
+    const url = match[0].replace(/[.,;:!?)]+$/, '');
+    if (!shouldSkip(url)) urls.add(url);
+  }
+  if (urls.size === 0) return { messageType, content };
+
   let result = content;
-  for (const [original, { trackingUrl }] of urlMap) {
-    result = result.split(original).join(trackingUrl);
+  for (const url of urls) {
+    const record = await createTrackedLink(db, {
+      name: `auto: ${url.slice(0, 60)}`,
+      originalUrl: url,
+    });
+    const friendParam = friendId ? `?f=${friendId}` : '';
+    const trackingUrl = `${workerUrl}/t/${record.id}${friendParam}`;
+    result = result.split(url).join(trackingUrl);
   }
   return { messageType, content: result };
 }
