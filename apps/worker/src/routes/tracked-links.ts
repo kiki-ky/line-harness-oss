@@ -133,15 +133,6 @@ trackedLinks.get('/t/:linkId', async (c) => {
     return c.json({ success: false, error: 'Link not found' }, 404);
   }
 
-  // If no user ID yet, check if this is LINE's in-app browser → redirect to LIFF for identification
-  const ua = c.req.header('user-agent') || '';
-  const isLineApp = /\bLine\b/i.test(ua);
-  if (!lineUserId && !friendId && isLineApp && c.env.LIFF_URL) {
-    const directUrl = `${c.env.WORKER_URL || new URL(c.req.url).origin}/t/${linkId}`;
-    const liffRedirect = `${c.env.LIFF_URL}?redirect=${encodeURIComponent(directUrl)}`;
-    return c.redirect(liffRedirect, 302);
-  }
-
   // Resolve friendId from LINE user ID if provided
   if (!friendId && lineUserId) {
     const friend = await getFriendByLineUserId(c.env.DB, lineUserId);
